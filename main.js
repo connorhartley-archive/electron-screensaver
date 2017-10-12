@@ -4,34 +4,66 @@ const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 
+const GlobalShortcut = electron.globalShortcut
+
 const path = require('path')
 const url = require('url')
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let hidden = true;
 
 function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
+  let windows = [];
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(url.format({
-    pathname: path.join(__dirname, 'index.html'),
-    protocol: 'file:',
-    slashes: true
-  }))
+  const closeCommand = GlobalShortcut.register('Function+F5', () => {
+    if (hidden) {
+      windows.forEach((window) => {
+          window.show();
+      })
+      hidden = false;
+    } else {
+      windows.forEach((window) => {
+          window.hide();
+      })
+      hidden = true;
+    }
+  })
+
+  let displays = electron.screen.getAllDisplays()
+
+  displays.forEach((display) => {
+    // Create the browser window.
+    let window = new BrowserWindow({
+      x: display.bounds.x + 50,
+      y: display.bounds.y + 50,
+
+      fullscreen: true,
+      alwaysOnTop: true,
+      autoHideMenuBar: true})
+
+    window.setMenu(null);
+
+    // and load the index.html of the app.
+    window.loadURL(url.format({
+      pathname: path.join(__dirname, 'index.html'),
+      protocol: 'file:',
+      slashes: true
+    }))
+
+    windows.push(window);
+
+    window.hide();
+
+    // Emitted when the window is closed.
+    window.on('closed', function () {
+      // Dereference the window object, usually you would store windows
+      // in an array if your app supports multi windows, this is the time
+      // when you should delete the corresponding element.
+      window = null
+    })
+  })
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
 }
 
 // This method will be called when Electron has finished
